@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DompetQu - Catatan Keuangan & Tabungan</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-md">
+        <div class="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-wallet"></i> DompetQu
+            </h1>
+            <span class="text-xs bg-indigo-500 px-2.5 py-1 rounded-full font-medium">PWA Ready</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-md w-full mx-auto p-4 flex-grow pb-24">
+        
+        <!-- Saldo Card -->
+        <div class="bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-2xl p-5 shadow-lg mb-6">
+            <p class="text-indigo-100 text-sm">Total Saldo Tersedia</p>
+            <h2 id="totalSaldo" class="text-3xl font-extrabold mt-1">Rp 0</h2>
+            <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-indigo-400/30">
+                <div>
+                    <p class="text-xs text-indigo-200">Pemasukan</p>
+                    <p id="totalPemasukan" class="font-semibold text-lg">Rp 0</p>
+                </div>
+                <div>
+                    <p class="text-xs text-indigo-200">Pengeluaran</p>
+                    <p id="totalPengeluaran" class="font-semibold text-lg">Rp 0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabungan Section -->
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-6">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-piggy-bank text-indigo-600"></i> Target Tabungan</h3>
+                <button onclick="bukaModalTabungan()" class="text-xs text-indigo-600 font-semibold hover:underline">Atur Target</button>
+            </div>
+            <div class="flex justify-between text-sm mb-1">
+                <span id="infoTargetLabel" class="text-slate-500">Belum ada target</span>
+                <span id="persenTabungan" class="font-bold text-indigo-600">0%</span>
+            </div>
+            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                <div id="progressBar" class="bg-indigo-600 h-full w-0 transition-all duration-500"></div>
+            </div>
+            <div class="flex justify-between items-center mt-3 pt-3 border-t border-slate-100 text-xs">
+                <span class="text-slate-500">Terkumpul: <b id="currentTabungan" class="text-slate-700">Rp 0</b></span>
+                <button onclick="tambahTabungan()" class="bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-100">+ Setor</button>
+            </div>
+        </div>
+
+        <!-- Tombol Aksi Transaksi -->
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <button onclick="bukaModalTransaksi('Masuk')" class="bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2">
+                <i class="fa-solid fa-circle-plus"></i> + Pemasukan
+            </button>
+            <button onclick="bukaModalTransaksi('Keluar')" class="bg-rose-600 hover:bg-rose-700 text-white py-3 px-4 rounded-xl font-semibold shadow-sm flex items-center justify-center gap-2">
+                <i class="fa-solid fa-circle-minus"></i> - Pengeluaran
+            </button>
+        </div>
+
+        <!-- Riwayat Transaksi -->
+        <div>
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-slate-700">Riwayat Transaksi</h3>
+                <button onclick="resetData()" class="text-xs text-rose-500 hover:underline">Reset Data</button>
+            </div>
+            <div id="listTransaksi" class="space-y-2">
+                <!-- Data akan masuk lewat JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Transaksi -->
+    <div id="modalTransaksi" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl">
+            <h3 id="modalTitle" class="font-bold text-lg mb-4 text-slate-800">Tambah Transaksi</h3>
+            <form id="formTransaksi" onsubmit="simpanTransaksi(event)" class="space-y-3">
+                <input type="hidden" id="jenisTransaksi">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Keterangan</label>
+                    <input type="text" id="ketTransaksi" required placeholder="Contoh: Gaji, Makan Siang" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Jumlah (Rp)</label>
+                    <input type="number" id="jumlahTransaksi" required placeholder="50000" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="tutupModal('modalTransaksi')" class="px-4 py-2 text-sm text-slate-500 font-medium">Batal</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Target Tabungan -->
+    <div id="modalTabungan" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl">
+            <h3 class="font-bold text-lg mb-4 text-slate-800">Atur Target Tabungan</h3>
+            <form onsubmit="simpanTargetTabungan(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Nama Target (Contoh: Beli Laptop)</label>
+                    <input type="text" id="namaTarget" required class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-600 mb-1">Nominal Target (Rp)</label>
+                    <input type="number" id="nominalTarget" required class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="tutupModal('modalTabungan')" class="px-4 py-2 text-sm text-slate-500 font-medium">Batal</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">Simpan Target</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Aplikasi -->
+    <script>
+        // Register Service Worker untuk PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(() => console.log('Service Worker Registered'));
+        }
+
+        // State Data
+        let transaksi = JSON.parse(localStorage.getItem('dompetqu_transaksi')) || [];
+        let tabungan = JSON.parse(localStorage.getItem('dompetqu_tabungan')) || { nama: 'Belum ada target', target: 0, terkumpul: 0 };
+
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
+        }
+
+        function render() {
+            let totalMasuk = 0;
+            let totalKeluar = 0;
+            let htmlList = '';
+
+            transaksi.forEach((t, index) => {
+                if (t.jenis === 'Masuk') {
+                    totalMasuk += t.jumlah;
+                    htmlList += `
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm">
+                            <div>
+                                <p class="font-semibold text-sm text-slate-800">${t.ket}</p>
+                                <span class="text-xs text-slate-400">${t.tanggal}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-emerald-600 font-bold text-sm">+ ${formatRupiah(t.jumlah)}</span>
+                                <button onclick="hapusTransaksi(${index})" class="text-slate-300 hover:text-rose-500"><i class="fa-solid fa-trash text-xs"></i></button>
+                            </div>
+                        </div>`;
+                } else {
+                    totalKeluar += t.jumlah;
+                    htmlList += `
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm">
+                            <div>
+                                <p class="font-semibold text-sm text-slate-800">${t.ket}</p>
+                                <span class="text-xs text-slate-400">${t.tanggal}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-rose-600 font-bold text-sm">- ${formatRupiah(t.jumlah)}</span>
+                                <button onclick="hapusTransaksi(${index})" class="text-slate-300 hover:text-rose-500"><i class="fa-solid fa-trash text-xs"></i></button>
+                            </div>
+                        </div>`;
+                }
+            });
+
+            if (transaksi.length === 0) {
+                htmlList = `<p class="text-center text-slate-400 text-xs py-4">Belum ada catatan transaksi.</p>`;
+            }
+
+            document.getElementById('listTransaksi').innerHTML = htmlList;
+            let saldoAkhir = totalMasuk - totalKeluar;
+            document.getElementById('totalSaldo').innerText = formatRupiah(saldoAkhir);
+            document.getElementById('totalPemasukan').innerText = formatRupiah(totalMasuk);
+            document.getElementById('totalPengeluaran').innerText = formatRupiah(totalKeluar);
+
+            // Render Tabungan
+            document.getElementById('infoTargetLabel').innerText = tabungan.target > 0 ? `${tabungan.nama} (Target: ${formatRupiah(tabungan.target)})` : 'Belum ada target';
+            document.getElementById('currentTabungan').innerText = formatRupiah(tabungan.terkumpul);
+            let persen = tabungan.target > 0 ? Math.min(Math.round((tabungan.terkumpul / tabungan.target) * 100), 100) : 0;
+            document.getElementById('persenTabungan').innerText = persen + '%';
+            document.getElementById('progressBar').style.width = persen + '%';
+
+            localStorage.setItem('dompetqu_transaksi', JSON.stringify(transaksi));
+            localStorage.setItem('dompetqu_tabungan', JSON.stringify(tabungan));
+        }
+
+        function bukaModalTransaksi(jenis) {
+            document.getElementById('jenisTransaksi').value = jenis;
+            document.getElementById('modalTitle').innerText = jenis === 'Masuk' ? 'Tambah Pemasukan' : 'Tambah Pengeluaran';
+            document.getElementById('modalTransaksi').classList.remove('hidden');
+            document.getElementById('modalTransaksi').classList.add('flex');
+        }
+
+        function bukaModalTabungan() {
+            document.getElementById('modalTabungan').classList.remove('hidden');
+            document.getElementById('modalTabungan').classList.add('flex');
+        }
+
+        function tutupModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById(id).classList.remove('flex');
+        }
+
+        function simpanTransaksi(e) {
+            e.preventDefault();
+            const jenis = document.getElementById('jenisTransaksi').value;
+            const ket = document.getElementById('ketTransaksi').value;
+            const jumlah = Number(document.getElementById('jumlahTransaksi').value);
+            const tanggal = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
+            transaksi.unshift({ jenis, ket, jumlah, tanggal });
+            document.getElementById('formTransaksi').reset();
+            tutupModal('modalTransaksi');
+            render();
+        }
+
+        function hapusTransaksi(index) {
+            if (confirm('Hapus transaksi ini?')) {
+                transaksi.splice(index, 1);
+                render();
+            }
+        }
+
+        function simpanTargetTabungan(e) {
+            e.preventDefault();
+            tabungan.nama = document.getElementById('namaTarget').value;
+            tabungan.target = Number(document.getElementById('nominalTarget').value);
+            tutupModal('modalTabungan');
+            render();
+        }
+
+        function tambahTabungan() {
+            if (tabungan.target <= 0) {
+                alert('Atur target tabungan terlebih dahulu!');
+                bukaModalTabungan();
+                return;
+            }
+            let tambah = prompt('Masukkan nominal setoran tabungan (Rp):');
+            if (tambah && !isNaN(tambah)) {
+                tabungan.terkumpul += Number(tambah);
+                render();
+            }
+        }
+
+        function resetData() {
+            if (confirm('Hapus semua data catatan keuangan dan tabungan?')) {
+                transaksi = [];
+                tabungan = { nama: 'Belum ada target', target: 0, terkumpul: 0 };
+                localStorage.clear();
+                render();
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
